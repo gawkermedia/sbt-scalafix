@@ -1,4 +1,10 @@
-resolvers += Resolver.sonatypeRepo("releases")
+resolvers := Seq(
+        "Kinja Public Group" at sys.env.getOrElse("KINJA_PUBLIC_REPO", "https://kinjajfrog.jfrog.io/kinjajfrog/sbt-virtual"),
+        "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
+)
+
+credentials += Credentials(Path.userHome / ".ivy2" / ".kinja-artifactory.credentials")
+
 addSbtPlugin("com.geirsson" % "sbt-ci-release" % "1.2.6")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
 addSbtPlugin(
