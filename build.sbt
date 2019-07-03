@@ -76,3 +76,5 @@ scriptedLaunchOpts ++= Seq(
   "-Xmx2048M",
   s"-Dplugin.version=${version.value}"
 )
+
+testOptions in Test --= Seq(Tests.Argument("showtimes", "true"), Tests.Argument("console"))
