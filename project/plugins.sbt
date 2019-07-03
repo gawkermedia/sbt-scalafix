@@ -5,7 +5,9 @@ resolvers := Seq(
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".kinja-artifactory.credentials")
 
-addSbtPlugin("com.geirsson" % "sbt-ci-release" % "1.2.6")
+// Kinja build plugin
+addSbtPlugin("com.kinja.sbtplugins" %% "kinja-build-plugin" % "3.2.4")
+
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.9.0")
 addSbtPlugin(
   "io.get-coursier" % "sbt-coursier" % coursier.util.Properties.version
