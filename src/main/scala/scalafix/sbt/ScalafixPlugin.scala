@@ -37,6 +37,11 @@ object ScalafixPlugin extends AutoPlugin {
         "Optional list of custom rules to install from Maven Central. " +
           "This setting is read from the global scope so it only needs to be defined once in the build."
       )
+    val scalafixDependenciesJars: SettingKey[Seq[File]] =
+      settingKey[Seq[File]](
+        "Optional list of of already resolved dependencies that prevent any attempt to download them from Maven Central." +
+          "This setting is read from the global scope so it only needs to be defined once in the build."
+      )
     val scalafixConfig: SettingKey[Option[File]] =
       settingKey[Option[File]](
         "Optional location to .scalafix.conf file to specify which scalafix rules should run. " +
@@ -86,12 +91,14 @@ object ScalafixPlugin extends AutoPlugin {
       workingDirectory = baseDirectory.in(ThisBuild).value.toPath
       scalafixInterface = ScalafixInterface.fromToolClasspath(
         scalafixDependencies = scalafixDependencies.in(ThisBuild).value,
-        scalafixCustomResolvers = scalafixResolvers.in(ThisBuild).value
+        scalafixCustomResolvers = scalafixResolvers.in(ThisBuild).value,
+        scalafixResolvedDependencies = scalafixDependenciesJars.in(ThisBuild).value,
       )
     },
     scalafixConfig := None, // let scalafix-cli try to infer $CWD/.scalafix.conf
     scalafixResolvers := ScalafixCoursier.defaultResolvers,
     scalafixDependencies := Nil,
+    scalafixDependenciesJars := Nil,
     commands += ScalafixEnable.command
   )
 
@@ -104,7 +111,8 @@ object ScalafixPlugin extends AutoPlugin {
   private def scalafixArgsFromShell(
       shell: ShellArgs,
       baseDependencies: Seq[ModuleID],
-      baseResolvers: Seq[Repository]
+      baseResolvers: Seq[Repository],
+      resolvedDependencies: Seq[File],
   ): (ShellArgs, ScalafixArguments) = {
     val (dependencyRules, rules) =
       shell.rules.partition(_.startsWith("dependency:"))
@@ -125,7 +133,8 @@ object ScalafixPlugin extends AutoPlugin {
       val extraDependencies = parsed.map(_.dependency)
       val interface = ScalafixInterface.fromToolClasspath(
         scalafixDependencies = extraDependencies ++ baseDependencies,
-        scalafixCustomResolvers = baseResolvers
+        scalafixCustomResolvers = baseResolvers,
+        scalafixResolvedDependencies = resolvedDependencies
       )
       val newShell = shell.copy(rules = rules ++ parsed.map(_.ruleName))
       (newShell, interface().args)
@@ -147,7 +156,8 @@ object ScalafixPlugin extends AutoPlugin {
         val (shell, mainArgs0) = scalafixArgsFromShell(
           shell0,
           scalafixDependencies.in(ThisBuild).value,
-          scalafixResolvers.in(ThisBuild).value
+          scalafixResolvers.in(ThisBuild).value,
+          scalafixDependenciesJars.in(ThisBuild).value
         )
         val mainArgs = mainArgs0
           .withRules(shell.rules.asJava)

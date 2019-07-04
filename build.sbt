@@ -15,7 +15,7 @@ homepage := Some(url("https://github.com/scalacenter/sbt-scalafix"))
 licenses := List(
   "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
 )
-version := "0.9.5"
+version := "0.9.5-ext"
 
 developers := List(
   Developer(

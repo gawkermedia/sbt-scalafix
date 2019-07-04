@@ -16,27 +16,45 @@ object ScalafixInterface {
   def fromToolClasspath(
       scalafixDependencies: Seq[ModuleID],
       scalafixCustomResolvers: Seq[Repository],
+      scalafixResolvedDependencies: Seq[File],
       logger: Logger = Compat.ConsoleLogger(System.out)
   ): () => ScalafixInterface =
     new LazyValue({ () =>
-      val jars = ScalafixCoursier.scalafixCliJars(scalafixCustomResolvers)
-      val urls = jars.map(_.toUri.toURL).toArray
-      val interfacesParent =
-        new ScalafixInterfacesClassloader(this.getClass.getClassLoader)
-      val classloader = new URLClassLoader(urls, interfacesParent)
-      val api = ScalafixAPI.classloadInstance(classloader)
-      val toolClasspath = ScalafixCoursier.scalafixToolClasspath(
-        scalafixDependencies,
-        scalafixCustomResolvers,
-        classloader
-      )
-      val callback = new ScalafixLogger(logger)
 
-      val args = api
-        .newArguments()
-        .withToolClasspath(toolClasspath)
-        .withMainCallback(callback)
+      if (scalafixResolvedDependencies.nonEmpty) {
 
-      ScalafixInterface(api, args)
+        val urls = scalafixResolvedDependencies.map(_.toURI.toURL).toArray
+        val interfacesParent =
+          new ScalafixInterfacesClassloader(this.getClass.getClassLoader)
+        val classloader = new URLClassLoader(urls, interfacesParent)
+        val api = ScalafixAPI.classloadInstance(classloader)
+        val callback = new ScalafixLogger(logger)
+        val args = api
+          .newArguments()
+          .withToolClasspath(classloader)
+          .withMainCallback(callback)
+
+        ScalafixInterface(api, args)
+      } else {
+        val jars = ScalafixCoursier.scalafixCliJars(scalafixCustomResolvers)
+        val urls = jars.map(_.toUri.toURL).toArray
+        val interfacesParent =
+          new ScalafixInterfacesClassloader(this.getClass.getClassLoader)
+        val classloader = new URLClassLoader(urls, interfacesParent)
+        val api = ScalafixAPI.classloadInstance(classloader)
+        val toolClasspath = ScalafixCoursier.scalafixToolClasspath(
+          scalafixDependencies,
+          scalafixCustomResolvers,
+          classloader
+        )
+        val callback = new ScalafixLogger(logger)
+
+        val args = api
+          .newArguments()
+          .withToolClasspath(toolClasspath)
+          .withMainCallback(callback)
+
+        ScalafixInterface(api, args)
+      }
     })
 }
